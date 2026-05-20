@@ -66,10 +66,13 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(state.tasks) { task ->
-                        TaskItem(task = task)
+                        TaskItem(
+                            task = task,
+                            // 3. Conectamos la tarjeta con el cerebro.
+                            onCheckedChange = { viewModel.toggleTaskStatus(task) }
+                        )
                     }
                 }
-            }
 
             // Indicador de carga sincronizando con PHP
             if (state.isLoading) {
@@ -95,7 +98,10 @@ fun HomeScreen(
 }
 
 @Composable
-fun TaskItem(task: Task) {
+fun TaskItem(
+    task: Task,
+    onCheckedChange: () -> Unit // <- 1. Le decimos que acepte una función de clic
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -110,10 +116,9 @@ fun TaskItem(task: Task) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // ¡NUEVO CHECKBOX AQUÍ!
                     Checkbox(
                         checked = task.status == TaskStatus.COMPLETED,
-                        onCheckedChange = { /* Ahorita lo conectamos desde arriba */ }
+                        onCheckedChange = { onCheckedChange() } // <- 2. Ejecutamos la función al tocarlo
                     )
                     Text(
                         text = task.title,
