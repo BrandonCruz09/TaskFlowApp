@@ -109,11 +109,18 @@ fun TaskItem(task: Task) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = task.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // ¡NUEVO CHECKBOX AQUÍ!
+                    Checkbox(
+                        checked = task.status == TaskStatus.COMPLETED,
+                        onCheckedChange = { /* Ahorita lo conectamos desde arriba */ }
+                    )
+                    Text(
+                        text = task.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
 
                 // Etiqueta de sincronización (Offline-First)
                 if (!task.isSynced) {

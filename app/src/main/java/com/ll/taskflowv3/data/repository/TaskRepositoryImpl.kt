@@ -66,6 +66,20 @@ class TaskRepositoryImpl(
     }
 
     override suspend fun updateTaskStatus(taskId: String, newStatus: TaskStatus): Result<Unit, DataError.Network> {
-        return Result.Success(Unit)
+        // 1. Actualizamos localmente primero (respuesta inmediata en pantalla)
+        dao.updateTaskStatus(taskId, newStatus.name)
+
+        // 2. Intentamos avisarle al servidor PHP
+        return try {
+            val response = api.updateStatus(taskId, newStatus.name)
+            if (response.isSuccessful) {
+                dao.markAsSynced(taskId)
+                Result.Success(Unit)
+            } else {
+                Result.Error(DataError.Network.SERVER_ERROR)
+            }
+        } catch (e: IOException) {
+            Result.Error(DataError.Network.NO_INTERNET)
+        }
     }
 }
