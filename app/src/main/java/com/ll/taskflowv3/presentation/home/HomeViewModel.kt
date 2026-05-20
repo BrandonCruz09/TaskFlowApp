@@ -59,4 +59,15 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
+    fun toggleTaskStatus(task: Task) {
+        viewModelScope.launch {
+            // Si estaba pendiente, la pasamos a completada, y viceversa
+            val newStatus = if (task.status == TaskStatus.COMPLETED) {
+                TaskStatus.PENDING
+            } else {
+                TaskStatus.COMPLETED
+            }
+            repository.updateTaskStatus(task.id, newStatus)
+        }
+    }
 }
