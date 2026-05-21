@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.ll.taskflowv3.domain.model.Task
+import com.ll.taskflowv3.domain.model.TaskStatus
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -57,6 +59,17 @@ class HomeViewModel @Inject constructor(
                     _state.update { it.copy(isLoading = false, error = errorMsg) }
                 }
             }
+        }
+    }
+    fun toggleTaskStatus(task: Task) {
+        viewModelScope.launch {
+            // Si estaba pendiente, la pasamos a completada, y viceversa
+            val newStatus = if (task.status == TaskStatus.COMPLETED) {
+                TaskStatus.PENDING
+            } else {
+                TaskStatus.COMPLETED
+            }
+            repository.updateTaskStatus(task.id, newStatus)
         }
     }
 }

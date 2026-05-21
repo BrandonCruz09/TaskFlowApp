@@ -37,7 +37,7 @@ fun HomeScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onNavigateToCreateTask, // <- AGREGAR ESTO AQUÍ
+                onClick = onNavigateToCreateTask,
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Agregar Tarea", tint = MaterialTheme.colorScheme.onPrimary)
@@ -50,7 +50,6 @@ fun HomeScreen(
                 .padding(paddingValues)
         ) {
             if (state.tasks.isEmpty() && !state.isLoading) {
-                // Estado Empty
                 Text(
                     text = "No tienes tareas pendientes.\n¡Tómate un café!",
                     modifier = Modifier.align(Alignment.Center),
@@ -59,24 +58,24 @@ fun HomeScreen(
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
             } else {
-                // Lista de Tareas
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(state.tasks) { task ->
-                        TaskItem(task = task)
+                        TaskItem(
+                            task = task,
+                            onCheckedChange = { viewModel.toggleTaskStatus(task) } // Conexión del evento
+                        )
                     }
                 }
             }
 
-            // Indicador de carga sincronizando con PHP
             if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.TopCenter).padding(16.dp))
             }
 
-            // Mensaje de Offline o Error en la parte inferior
             if (state.error != null) {
                 Surface(
                     color = MaterialTheme.colorScheme.errorContainer,
@@ -95,7 +94,10 @@ fun HomeScreen(
 }
 
 @Composable
-fun TaskItem(task: Task) {
+fun TaskItem(
+    task: Task,
+    onCheckedChange: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -109,13 +111,18 @@ fun TaskItem(task: Task) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = task.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = task.status == TaskStatus.COMPLETED,
+                        onCheckedChange = { onCheckedChange() }
+                    )
+                    Text(
+                        text = task.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
 
-                // Etiqueta de sincronización (Offline-First)
                 if (!task.isSynced) {
                     Text(
                         text = "⏳ Pendiente",
@@ -131,11 +138,10 @@ fun TaskItem(task: Task) {
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Badge de Estado
             val statusColor = when(task.status) {
                 TaskStatus.PENDING -> MaterialTheme.colorScheme.error
                 TaskStatus.IN_PROGRESS -> MaterialTheme.colorScheme.primary
-                TaskStatus.COMPLETED -> androidx.compose.ui.graphics.Color(0xFF4CAF50) // Verde
+                TaskStatus.COMPLETED -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
             }
 
             Surface(
