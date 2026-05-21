@@ -59,4 +59,10 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
+
+    fun deleteTask(task: Task) {
+        viewModelScope.launch {
+            repository.deleteTask(task.id)
+        }
+    }
 }

@@ -65,8 +65,14 @@ fun HomeScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+
+
                     items(state.tasks) { task ->
-                        TaskItem(task = task)
+                        TaskItem(
+                            task = task,
+                            onCheckedChange = { viewModel.toggleTaskStatus(task) },
+                            onDeleteClick = { viewModel.deleteTask(task) } // <- CONEXIÓN AL VIEWMODEL
+                        )
                     }
                 }
             }
@@ -95,7 +101,8 @@ fun HomeScreen(
 }
 
 @Composable
-fun TaskItem(task: Task) {
+fun TaskItem(task: Task, onCheckedChange: () -> Unit,
+             onDeleteClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -116,14 +123,25 @@ fun TaskItem(task: Task) {
                 )
 
                 // Etiqueta de sincronización (Offline-First)
+                Row(verticalAlignment = Alignment.CenterVertically) {
                 if (!task.isSynced) {
                     Text(
                         text = "⏳ Pendiente",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(end = 8.dp)
                     )
                 }
-            }
+                    // ¡NUEVO BOTÓN DE BORRAR!
+                    IconButton(onClick = { onDeleteClick() }) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.Delete,
+                            contentDescription = "Borrar Tarea",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = task.description,
@@ -152,4 +170,5 @@ fun TaskItem(task: Task) {
             }
         }
     }
+}
 }

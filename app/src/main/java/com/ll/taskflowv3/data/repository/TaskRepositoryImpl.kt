@@ -22,6 +22,7 @@ class TaskRepositoryImpl(
         return dao.getAllTasks().map { entities ->
             entities.map { it.toDomain() }
         }
+
     }
 
     override suspend fun syncTasks(): Result<Unit, DataError.Network> {
@@ -68,4 +69,11 @@ class TaskRepositoryImpl(
     override suspend fun updateTaskStatus(taskId: String, newStatus: TaskStatus): Result<Unit, DataError.Network> {
         return Result.Success(Unit)
     }
+
+    override suspend fun deleteTask(taskId: String): Result<Unit, DataError.Network> {
+        dao.deleteTask(taskId)
+        // Nota: Cuando conectemos el backend, aquí llamaremos a la API PHP para borrarla del servidor también
+        return Result.Success(Unit)
+    }
+
 }
