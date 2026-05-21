@@ -37,7 +37,7 @@ fun HomeScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onNavigateToCreateTask, // <- AGREGAR ESTO AQUÍ
+                onClick = onNavigateToCreateTask,
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Agregar Tarea", tint = MaterialTheme.colorScheme.onPrimary)
@@ -50,7 +50,6 @@ fun HomeScreen(
                 .padding(paddingValues)
         ) {
             if (state.tasks.isEmpty() && !state.isLoading) {
-                // Estado Empty
                 Text(
                     text = "No tienes tareas pendientes.\n¡Tómate un café!",
                     modifier = Modifier.align(Alignment.Center),
@@ -59,7 +58,6 @@ fun HomeScreen(
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
             } else {
-                // Lista de Tareas
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
@@ -68,18 +66,16 @@ fun HomeScreen(
                     items(state.tasks) { task ->
                         TaskItem(
                             task = task,
-                            // 3. Conectamos la tarjeta con el cerebro.
-                            onCheckedChange = { viewModel.toggleTaskStatus(task) }
+                            onCheckedChange = { viewModel.toggleTaskStatus(task) } // Conexión del evento
                         )
                     }
                 }
+            }
 
-            // Indicador de carga sincronizando con PHP
             if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.TopCenter).padding(16.dp))
             }
 
-            // Mensaje de Offline o Error en la parte inferior
             if (state.error != null) {
                 Surface(
                     color = MaterialTheme.colorScheme.errorContainer,
@@ -100,7 +96,7 @@ fun HomeScreen(
 @Composable
 fun TaskItem(
     task: Task,
-    onCheckedChange: () -> Unit // <- 1. Le decimos que acepte una función de clic
+    onCheckedChange: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -118,7 +114,7 @@ fun TaskItem(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
                         checked = task.status == TaskStatus.COMPLETED,
-                        onCheckedChange = { onCheckedChange() } // <- 2. Ejecutamos la función al tocarlo
+                        onCheckedChange = { onCheckedChange() }
                     )
                     Text(
                         text = task.title,
@@ -127,7 +123,6 @@ fun TaskItem(
                     )
                 }
 
-                // Etiqueta de sincronización (Offline-First)
                 if (!task.isSynced) {
                     Text(
                         text = "⏳ Pendiente",
@@ -143,11 +138,10 @@ fun TaskItem(
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Badge de Estado
             val statusColor = when(task.status) {
                 TaskStatus.PENDING -> MaterialTheme.colorScheme.error
                 TaskStatus.IN_PROGRESS -> MaterialTheme.colorScheme.primary
-                TaskStatus.COMPLETED -> androidx.compose.ui.graphics.Color(0xFF4CAF50) // Verde
+                TaskStatus.COMPLETED -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
             }
 
             Surface(
