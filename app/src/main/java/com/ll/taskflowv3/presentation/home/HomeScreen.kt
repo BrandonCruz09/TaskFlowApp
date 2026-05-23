@@ -16,6 +16,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ll.taskflowv3.domain.model.Task
 import com.ll.taskflowv3.domain.model.TaskStatus
+import androidx.compose.material.icons.filled.Delete
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,7 +67,8 @@ fun HomeScreen(
                     items(state.tasks) { task ->
                         TaskItem(
                             task = task,
-                            onCheckedChange = { viewModel.toggleTaskStatus(task) } // Conexión del evento
+                            onCheckedChange = { viewModel.toggleTaskStatus(task) },
+                            onDeleteClick = { viewModel.deleteTask(task) } // <- CONEXIÓN AL VIEWMODEL
                         )
                     }
                 }
@@ -96,7 +98,8 @@ fun HomeScreen(
 @Composable
 fun TaskItem(
     task: Task,
-    onCheckedChange: () -> Unit
+    onCheckedChange: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -107,10 +110,13 @@ fun TaskItem(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
+
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
-            ) {
+            )
+
+            {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
                         checked = task.status == TaskStatus.COMPLETED,
@@ -122,6 +128,25 @@ fun TaskItem(
                         fontWeight = FontWeight.Bold
                     )
                 }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (!task.isSynced) {
+                        Text(
+                            text = "⏳ Pendiente",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                    }
+
+                    IconButton(onClick = { onDeleteClick() }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Borrar Tarea",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+
 
                 if (!task.isSynced) {
                     Text(

@@ -66,12 +66,10 @@ class TaskRepositoryImpl(
     }
 
     override suspend fun updateTaskStatus(taskId: String, newStatus: TaskStatus): Result<Unit, DataError.Network> {
-        // 1. Actualizamos localmente primero (respuesta inmediata en pantalla)
         dao.updateTaskStatus(taskId, newStatus.name)
-
-        // 2. Intentamos avisarle al servidor PHP
         return try {
-            val response = api.updateStatus(taskId, newStatus.name)
+            // en esta parte se le hace una llamada a RETROFIT para actualizar el estado en el servidor
+            val response = api.updateStatus(taskId, mapOf("status" to newStatus.name))
             if (response.isSuccessful) {
                 dao.markAsSynced(taskId)
                 Result.Success(Unit)
@@ -82,4 +80,40 @@ class TaskRepositoryImpl(
             Result.Error(DataError.Network.NO_INTERNET)
         }
     }
+    override suspend fun deleteTask(taskId: String): Result<Unit, DataError.Network> {
+        dao.deleteTask(taskId)
+        return try {
+            // en esta parte se le hace una llamada a RETROFIT para hacer la funcion delete
+            val response = api.deleteTask(taskId)
+            if (response.isSuccessful) {
+                Result.Success(Unit)
+            } else {
+                Result.Error(DataError.Network.SERVER_ERROR)
+            }
+        } catch (e: IOException) {
+            Result.Error(DataError.Network.NO_INTERNET)
+        }
+    }
+
+}
+
+fun com.ll.taskflowv3.domain.model.Task.toDto(): com.ll.taskflowv3.data.remote.TaskDto {
+    return com.ll.taskflowv3.data.remote.TaskDto(
+        id = this.id,
+        title = this.title,
+        description = this.description,
+        status = this.status.name, // Aquí convertimos el TaskStatus a String para PHP
+        priority = this.priority
+    )
+}
+
+fun com.ll.taskflowv3.data.remote.TaskDto.toDomain(): com.ll.taskflowv3.domain.model.Task {
+    return com.ll.taskflowv3.domain.model.Task(
+        id = this.id,
+        title = this.title,
+        description = this.description,
+        status = com.ll.taskflowv3.domain.model.TaskStatus.valueOf(this.status), // De String a TaskStatus
+        priority = this.priority,
+        isSynced = true
+    )
 }

@@ -26,4 +26,7 @@ interface TaskDao {
 
     @Query("UPDATE tasks_table SET status = :status, isSynced = 0 WHERE id = :taskId")
     suspend fun updateTaskStatus(taskId: String, status: String)
+
+    @Query("DELETE FROM tasks_table WHERE id = :taskId")
+    suspend fun deleteTask(taskId: String)
 }

@@ -72,4 +72,9 @@ class HomeViewModel @Inject constructor(
             repository.updateTaskStatus(task.id, newStatus)
         }
     }
+    fun deleteTask(task: Task) {
+        viewModelScope.launch {
+            repository.deleteTask(task.id)
+        }
+    }
 }

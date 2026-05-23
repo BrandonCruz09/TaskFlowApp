@@ -14,13 +14,16 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.ll.taskflowv3.R
 
 @Composable
 fun LoginScreen(
     onNavigateToHome: () -> Unit, // Función para cambiar de pantalla
-    viewModel: LoginViewModel = hiltViewModel() // Hilt crea el ViewModel solo
+    viewModel: LoginViewModel = hiltViewModel() // Hilt
 ) {
-    // Escuchamos el estado reactivo del ViewModel
+    //  ViewModel
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     // Si el inicio de sesión es exitoso, navegamos a la siguiente pantalla
@@ -42,6 +45,13 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Image(
+                painter = painterResource(id = R.drawable.logotask),
+                contentDescription = "Logo de la aplicación",
+                modifier = Modifier
+                    .size(120.dp)
+                    .padding(bottom = 32.dp)
+            )
             Text(
                 text = "TaskFlow Enterprise",
                 style = MaterialTheme.typography.headlineMedium,

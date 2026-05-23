@@ -17,4 +17,6 @@ interface TaskRepository {
     suspend fun createTask(task: Task): Result<Unit, DataError.Network>
 
     suspend fun updateTaskStatus(taskId: String, newStatus: TaskStatus): Result<Unit, DataError.Network>
+
+    suspend fun deleteTask(taskId: String): com.ll.taskflowv3.core.util.Result<Unit, com.ll.taskflowv3.core.util.DataError.Network>
 }
