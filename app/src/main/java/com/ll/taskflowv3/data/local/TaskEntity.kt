@@ -12,7 +12,8 @@ data class TaskEntity(
     val description: String,
     val status: String, // Room no guarda Enums directamente, guardamos un String
     val priority: Int,
-    val isSynced: Boolean
+    val isSynced: Boolean,
+    val dueDate: Long? = null
 ) {
     // Función traductora: Convierte la "Tabla" al modelo puro del "Domain"
     fun toDomain(): Task = Task(

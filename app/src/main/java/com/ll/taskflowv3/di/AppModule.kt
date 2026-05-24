@@ -29,7 +29,9 @@ object AppModule {
             app,
             TaskDatabase::class.java,
             "taskflow_db"
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides
