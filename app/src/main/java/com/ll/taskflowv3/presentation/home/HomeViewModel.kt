@@ -26,9 +26,10 @@ class HomeViewModel @Inject constructor(
     val state: StateFlow<HomeState> = _state.asStateFlow()
 
     init {
-        // En cuanto se abre la pantalla, empezamos a escuchar la base de datos y a sincronizar
-        observeTasks()
-        syncTasks()
+        // Ejecutamos la sincronización silenciosa en segundo plano
+        viewModelScope.launch {
+            repository.syncPendingTasks()
+        }
     }
 
     private fun observeTasks() {

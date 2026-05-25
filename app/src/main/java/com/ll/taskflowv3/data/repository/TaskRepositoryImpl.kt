@@ -23,7 +23,21 @@ class TaskRepositoryImpl(
             entities.map { it.toDomain() }
         }
     }
+    override suspend fun syncPendingTasks() {
+        // Agregamos el mapeo para convertir los Entities a Tasks de dominio
+        val pendingTasks = dao.getUnsyncedTasks().map { it.toDomain() }
 
+        for (task in pendingTasks) {
+            try {
+                val response = api.createTask(task.toDto())
+                if (response.isSuccessful) {
+                    dao.markAsSynced(task.id)
+                }
+            } catch (e: Exception) {
+                continue
+            }
+        }
+    }
     override suspend fun syncTasks(): Result<Unit, DataError.Network> {
         return try {
             val response = api.getTasks()
@@ -103,7 +117,8 @@ fun com.ll.taskflowv3.domain.model.Task.toDto(): com.ll.taskflowv3.data.remote.T
         title = this.title,
         description = this.description,
         status = this.status.name, // Aquí convertimos el TaskStatus a String para PHP
-        priority = this.priority
+        priority = this.priority,
+        dueDate = this.dueDate
     )
 }
 
@@ -114,6 +129,7 @@ fun com.ll.taskflowv3.data.remote.TaskDto.toDomain(): com.ll.taskflowv3.domain.m
         description = this.description,
         status = com.ll.taskflowv3.domain.model.TaskStatus.valueOf(this.status), // De String a TaskStatus
         priority = this.priority,
-        isSynced = true
+        isSynced = true,
+        dueDate = this.dueDate
     )
 }
