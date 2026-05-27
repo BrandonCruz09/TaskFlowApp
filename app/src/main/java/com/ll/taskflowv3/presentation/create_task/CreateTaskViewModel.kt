@@ -30,6 +30,14 @@ class CreateTaskViewModel @Inject constructor(
         _state.update { it.copy(description = description, error = null) }
     }
 
+    fun onDueDateChange(dateMillis: Long?) {
+        _state.update { it.copy(dueDate = dateMillis) }
+    }
+
+    fun onCategoryChange(newCategory: String) {
+        _state.update { it.copy(category = newCategory) }
+    }
+
     fun saveTask() {
         val currentState = _state.value
 
@@ -41,20 +49,19 @@ class CreateTaskViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
 
-            // Creamos el modelo puro de negocio
             val newTask = Task(
-                id = UUID.randomUUID().toString(), // ID único aleatorio
+                id = UUID.randomUUID().toString(),
                 title = currentState.title,
                 description = currentState.description,
-                status = TaskStatus.PENDING, // Toda tarea nueva nace como pendiente
-                priority = 1, // Prioridad normal por defecto
-                isSynced = false // Nace sin sincronizar hasta que Retrofit diga lo contrario
+                status = TaskStatus.PENDING,
+                priority = 1,
+                isSynced = false,
+                dueDate = currentState.dueDate,
+                category = currentState.category, // SE ASIGNA CORRECTAMENTE
+                reminderTime = null
             )
 
-            // Le pasamos el paquete al Repositorio. Él sabrá qué hacer.
             repository.createTask(newTask)
-
-            // Como es Offline-First, asumimos que se guardó localmente con éxito
             _state.update { it.copy(isLoading = false, isSaved = true) }
         }
     }

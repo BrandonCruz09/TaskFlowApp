@@ -13,7 +13,9 @@ data class TaskEntity(
     val status: String, // Room no guarda Enums directamente, guardamos un String
     val priority: Int,
     val isSynced: Boolean,
-    val dueDate: Long? = null // <- NUEVA COLUMNA EN SQLite
+    val dueDate: Long? = null,
+    val category: String = "General",
+    val reminderTime: Long? = null
 ) {
     // Función traductora: Convierte la "Tabla" al modelo puro del "Domain"
     fun toDomain(): Task = Task(

@@ -26,9 +26,15 @@ class HomeViewModel @Inject constructor(
     val state: StateFlow<HomeState> = _state.asStateFlow()
 
     init {
-        // Ejecutamos la sincronización silenciosa en segundo plano
         viewModelScope.launch {
             repository.syncPendingTasks()
+        }
+        viewModelScope.launch {
+            repository.getTasks().collect { listaActualizada ->
+                // Aquí actualizas el estado de tu pantalla con la nueva lista.
+                // Dependiendo de cómo se llame tu estado, suele ser algo así:
+                _state.update { it.copy(tasks = listaActualizada) }
+            }
         }
     }
 

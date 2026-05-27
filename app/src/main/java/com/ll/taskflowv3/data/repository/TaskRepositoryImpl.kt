@@ -19,8 +19,8 @@ class TaskRepositoryImpl(
 ) : TaskRepository {
 
     override fun getTasks(): Flow<List<Task>> {
-        return dao.getAllTasks().map { entities ->
-            entities.map { it.toDomain() }
+        return dao.getAllTasks().map { listaEntities ->
+            listaEntities.map { entity -> entity.toDomain() }
         }
     }
     override suspend fun syncPendingTasks() {
@@ -118,7 +118,9 @@ fun com.ll.taskflowv3.domain.model.Task.toDto(): com.ll.taskflowv3.data.remote.T
         description = this.description,
         status = this.status.name, // Aquí convertimos el TaskStatus a String para PHP
         priority = this.priority,
-        dueDate = this.dueDate
+        dueDate = this.dueDate,
+        category = this.category,
+        reminderTime =this.reminderTime
     )
 }
 
@@ -130,6 +132,9 @@ fun com.ll.taskflowv3.data.remote.TaskDto.toDomain(): com.ll.taskflowv3.domain.m
         status = com.ll.taskflowv3.domain.model.TaskStatus.valueOf(this.status), // De String a TaskStatus
         priority = this.priority,
         isSynced = true,
-        dueDate = this.dueDate
+        dueDate = this.dueDate,
+        category = this.category,
+        reminderTime = this.reminderTime
+
     )
 }

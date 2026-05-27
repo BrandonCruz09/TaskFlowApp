@@ -20,7 +20,6 @@ fun CreateTaskScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    // Si el ViewModel dice que ya se guardó, regresamos a la pantalla anterior
     LaunchedEffect(state.isSaved) {
         if (state.isSaved) {
             onNavigateBack()
@@ -65,9 +64,25 @@ fun CreateTaskScreen(
                 label = { Text("Descripción") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp), // Más alto para que parezca área de texto
-                maxLines = 5
+                    .height(110.dp),
+                maxLines = 4
             )
+
+            // NUEVA SECCIÓN: BOTONES DE CATEGORÍA
+            Text(text = "Categoría:", style = MaterialTheme.typography.titleMedium)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                val categories = listOf("Escuela", "Personal", "Trabajo")
+                categories.forEach { categoryName ->
+                    FilterChip(
+                        selected = state.category == categoryName,
+                        onClick = { viewModel.onCategoryChange(categoryName) },
+                        label = { Text(categoryName) }
+                    )
+                }
+            }
 
             if (state.error != null) {
                 Text(
@@ -77,7 +92,7 @@ fun CreateTaskScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f)) // Empuja el botón hacia abajo
+            Spacer(modifier = Modifier.weight(1f))
 
             Button(
                 onClick = { viewModel.saveTask() },

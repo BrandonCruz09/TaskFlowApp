@@ -12,7 +12,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.ll.taskflowv3"
+        applicationId = "com.ll.taskflowv5"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

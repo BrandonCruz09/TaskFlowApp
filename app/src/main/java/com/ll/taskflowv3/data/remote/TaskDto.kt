@@ -8,5 +8,7 @@ data class TaskDto(
     val description: String,
     val status: String,
     val priority: Int,
-    val dueDate: Long? = null
+    val dueDate: Long? = null,
+    val category: String = "General",
+    val reminderTime: Long? = null
 )
