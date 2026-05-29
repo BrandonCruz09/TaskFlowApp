@@ -13,6 +13,8 @@ interface TaskApi {
 
     @GET("tasks")
     suspend fun getTasks(): Response<List<TaskDto>> // Usamos TaskDto
+    @GET("tasks/stats")
+    suspend fun getDashboardStats(): retrofit2.Response<DashboardStatsDto>
 
     @POST("tasks")
     suspend fun createTask(@Body task: TaskDto): Response<Unit> // Usamos TaskDto

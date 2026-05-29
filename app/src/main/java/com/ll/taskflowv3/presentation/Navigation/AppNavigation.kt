@@ -4,19 +4,24 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.ll.taskflowv3.presentation.create_task.CreateTaskScreen
-import com.ll.taskflowv3.presentation.home.HomeScreen
+
+// Importaciones de tus pantallas
 import com.ll.taskflowv3.presentation.login.LoginScreen
+import com.ll.taskflowv3.presentation.home.HomeScreen
+import com.ll.taskflowv3.presentation.create_task.CreateTaskScreen
+import com.ll.taskflowv3.presentation.admin.AdminDashboardScreen
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
 
+    // INICIO DEL MAPA DE NAVEGACIÓN
     NavHost(navController = navController, startDestination = "login") {
 
+        // PANTALLA 0: LOGIN
         composable("login") {
             LoginScreen(
-                onNavigateToHome = {
+                onNavigateToHome = {  // <-- ¡ESTE ES EL VERDADERO NOMBRE!
                     navController.navigate("home") {
                         popUpTo("login") { inclusive = true }
                     }
@@ -24,22 +29,27 @@ fun AppNavigation() {
             )
         }
 
+        // PANTALLA 1: HOME
         composable("home") {
             HomeScreen(
-                // Le damos instrucciones a la pantalla Home de qué hacer al picar el FAB
-                onNavigateToCreateTask = {
-                    navController.navigate("create_task")
-                }
+                onNavigateToCreateTask = { navController.navigate("create_task") },
+                onNavigateToAdmin = { navController.navigate("admin_dashboard") }
             )
         }
 
-        // NUEVA RUTA
+        // PANTALLA 2: CREAR TAREA
         composable("create_task") {
             CreateTaskScreen(
-                onNavigateBack = {
-                    navController.popBackStack() // Nos regresa a la pantalla anterior (Home)
-                }
+                onNavigateBack = { navController.popBackStack() }
             )
         }
-    }
+
+        // PANTALLA 3: DASHBOARD ADMINISTRATIVO
+        composable("admin_dashboard") {
+            AdminDashboardScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+    } // LLAVE DE CIERRE DEL NAVHOST
 }

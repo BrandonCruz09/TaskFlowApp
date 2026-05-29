@@ -53,7 +53,7 @@ object AppModule {
 
         return Retrofit.Builder()
             // CAMBIA ESTO por la URL real de tu backend PHP o servidor local
-            .baseUrl("http://10.0.2.2/taskflow/api/") // El '/' al final es obligatorio
+            .baseUrl("http://192.168.1.120/taskflow/api/") // El '/' al final es obligatorio
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

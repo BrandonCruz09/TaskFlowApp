@@ -21,4 +21,5 @@ interface TaskRepository {
     suspend fun deleteTask(taskId: String): com.ll.taskflowv3.core.util.Result<Unit, com.ll.taskflowv3.core.util.DataError.Network>
 
     suspend fun syncPendingTasks()
+    suspend fun getDashboardStats(): com.ll.taskflowv3.core.util.Result<com.ll.taskflowv3.data.remote.DashboardStatsDto, DataError.Network>
 }

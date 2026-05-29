@@ -24,7 +24,10 @@ data class TaskEntity(
         description = description,
         status = TaskStatus.valueOf(status),
         priority = priority,
-        isSynced = isSynced
+        isSynced = isSynced,
+        dueDate = dueDate,
+        category = category,         // ESTO DEBE ESTAR
+        reminderTime = reminderTime
     )
 }
 
@@ -35,5 +38,8 @@ fun Task.toEntity(): TaskEntity = TaskEntity(
     description = description,
     status = status.name,
     priority = priority,
-    isSynced = isSynced
+    isSynced = isSynced,
+    dueDate = dueDate,
+    category = category,
+    reminderTime = reminderTime
 )

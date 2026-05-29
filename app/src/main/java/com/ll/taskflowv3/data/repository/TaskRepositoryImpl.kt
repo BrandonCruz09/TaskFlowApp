@@ -18,17 +18,31 @@ class TaskRepositoryImpl(
     private val api: TaskApi
 ) : TaskRepository {
 
+    override suspend fun getDashboardStats(): Result<com.ll.taskflowv3.data.remote.DashboardStatsDto, DataError.Network> {
+        return try {
+            val response = api.getDashboardStats()
+            if (response.isSuccessful && response.body() != null) {
+                Result.Success(response.body()!!)
+            } else {
+                Result.Error(DataError.Network.SERVER_ERROR)
+            }
+        } catch (e: IOException) {
+            Result.Error(DataError.Network.NO_INTERNET)
+        }
+    }
+
     override fun getTasks(): Flow<List<Task>> {
         return dao.getAllTasks().map { listaEntities ->
             listaEntities.map { entity -> entity.toDomain() }
         }
     }
+
     override suspend fun syncPendingTasks() {
-        // Agregamos el mapeo para convertir los Entities a Tasks de dominio
         val pendingTasks = dao.getUnsyncedTasks().map { it.toDomain() }
 
         for (task in pendingTasks) {
             try {
+                // Usamos toDto() para que viaje con categoría y recordatorio
                 val response = api.createTask(task.toDto())
                 if (response.isSuccessful) {
                     dao.markAsSynced(task.id)
@@ -38,13 +52,15 @@ class TaskRepositoryImpl(
             }
         }
     }
+
     override suspend fun syncTasks(): Result<Unit, DataError.Network> {
         return try {
             val response = api.getTasks()
 
             if (response.isSuccessful && response.body() != null) {
+                // Usamos toDomain() y luego toEntity() para preservar TODO
                 val serverTasks = response.body()!!.map { dto ->
-                    Task(dto.id, dto.title, dto.description, TaskStatus.valueOf(dto.status), dto.priority, true).toEntity()
+                    dto.toDomain().toEntity()
                 }
                 dao.insertTasks(serverTasks)
                 Result.Success(Unit)
@@ -62,11 +78,8 @@ class TaskRepositoryImpl(
         dao.insertTask(task.toEntity())
 
         return try {
-            val dto = com.ll.taskflowv3.data.remote.TaskDto(
-                id = task.id, title = task.title, description = task.description,
-                status = task.status.name, priority = task.priority
-            )
-            val response = api.createTask(dto)
+            // Usamos toDto() para no perder datos en la red
+            val response = api.createTask(task.toDto())
 
             if (response.isSuccessful) {
                 dao.markAsSynced(task.id)
@@ -82,7 +95,6 @@ class TaskRepositoryImpl(
     override suspend fun updateTaskStatus(taskId: String, newStatus: TaskStatus): Result<Unit, DataError.Network> {
         dao.updateTaskStatus(taskId, newStatus.name)
         return try {
-            // en esta parte se le hace una llamada a RETROFIT para actualizar el estado en el servidor
             val response = api.updateStatus(taskId, mapOf("status" to newStatus.name))
             if (response.isSuccessful) {
                 dao.markAsSynced(taskId)
@@ -94,10 +106,10 @@ class TaskRepositoryImpl(
             Result.Error(DataError.Network.NO_INTERNET)
         }
     }
+
     override suspend fun deleteTask(taskId: String): Result<Unit, DataError.Network> {
         dao.deleteTask(taskId)
         return try {
-            // en esta parte se le hace una llamada a RETROFIT para hacer la funcion delete
             val response = api.deleteTask(taskId)
             if (response.isSuccessful) {
                 Result.Success(Unit)
@@ -108,19 +120,19 @@ class TaskRepositoryImpl(
             Result.Error(DataError.Network.NO_INTERNET)
         }
     }
-
 }
+
 
 fun com.ll.taskflowv3.domain.model.Task.toDto(): com.ll.taskflowv3.data.remote.TaskDto {
     return com.ll.taskflowv3.data.remote.TaskDto(
         id = this.id,
         title = this.title,
         description = this.description,
-        status = this.status.name, // Aquí convertimos el TaskStatus a String para PHP
+        status = this.status.name,
         priority = this.priority,
         dueDate = this.dueDate,
         category = this.category,
-        reminderTime =this.reminderTime
+        reminderTime = this.reminderTime
     )
 }
 
@@ -129,12 +141,12 @@ fun com.ll.taskflowv3.data.remote.TaskDto.toDomain(): com.ll.taskflowv3.domain.m
         id = this.id,
         title = this.title,
         description = this.description,
-        status = com.ll.taskflowv3.domain.model.TaskStatus.valueOf(this.status), // De String a TaskStatus
+        status = com.ll.taskflowv3.domain.model.TaskStatus.valueOf(this.status),
         priority = this.priority,
         isSynced = true,
         dueDate = this.dueDate,
         category = this.category,
         reminderTime = this.reminderTime
-
     )
+
 }

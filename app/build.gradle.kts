@@ -41,6 +41,10 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+    // WorkManager nativo en Kotlin
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.hilt:hilt-work:1.2.0")
+    ksp("androidx.hilt:hilt-compiler:1.2.0")
 
     // USAMOS STRINGS DIRECTOS PARA NO DEPENDER DEL DICCIONARIO ROTO
     implementation(platform("androidx.compose:compose-bom:2024.04.01"))

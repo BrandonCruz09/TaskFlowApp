@@ -9,6 +9,9 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,27 +24,51 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ll.taskflowv3.domain.model.Task
 import com.ll.taskflowv3.domain.model.TaskStatus
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.text.style.TextDecoration
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onNavigateToCreateTask: () -> Unit,
+    onNavigateToAdmin: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     var showAdminDialog by remember { mutableStateOf(false) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val currentContext = LocalContext.current
 
-    // 1. NUESTRA LISTA DE CATEGORÍAS Y EL ESTADO DE LA PESTAÑA ACTUAL
-    val categories = listOf("Escuela", "Personal", "Trabajo")
+    LaunchedEffect(Unit) {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+        val syncRequest = OneTimeWorkRequestBuilder<com.ll.taskflowv3.data.sync.SyncTasksWorker>()
+            .setConstraints(constraints)
+            .build()
+        WorkManager.getInstance(currentContext).enqueue(syncRequest)
+    }
+
+    // 1. AGREGAMOS LA NUEVA PESTAÑA AL ARREGLO
+    val categories = listOf("Escuela", "Personal", "Trabajo", "Completados")
     var selectedCategory by remember { mutableStateOf(categories[0]) }
 
-    // 2. FILTRAMOS LAS TAREAS SEGÚN LA PESTAÑA SELECCIONADA
-    val filteredTasks = state.tasks.filter { it.category == selectedCategory }
+    // 2. LA NUEVA LÓGICA DE FILTRADO MAESTRA
+    val filteredTasks = if (selectedCategory == "Completados") {
+        // Si estamos en "Completados", mostramos todas las terminadas
+        state.tasks.filter { it.status == TaskStatus.COMPLETED }
+    } else {
+        // Si estamos en las otras, mostramos solo las de esa categoría que NO estén terminadas
+        state.tasks.filter { it.category == selectedCategory && it.status != TaskStatus.COMPLETED }
+    }
 
     Scaffold(
         topBar = {
@@ -54,55 +81,58 @@ fun HomeScreen(
                 ),
                 actions = {
                     IconButton(onClick = { showAdminDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "Admin Login"
-                        )
+                        Icon(imageVector = Icons.Default.Lock, contentDescription = "Admin Login")
                     }
                 }
             )
         },
-        // 3. LA NUEVA BARRA INFERIOR (BOTTOM BAR)
         bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            ) {
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceVariant) {
                 categories.forEach { category ->
                     NavigationBarItem(
                         selected = selectedCategory == category,
                         onClick = { selectedCategory = category },
                         icon = {
-                            // Asignamos un icono distinto a cada pestaña
+                            // 3. ASIGNAMOS EL ÍCONO A LA NUEVA PESTAÑA
                             val icon = when (category) {
                                 "Escuela" -> Icons.Default.Star
                                 "Personal" -> Icons.Default.Person
-                                else -> Icons.Default.Menu // Para el trabajo
+                                "Completados" -> Icons.Default.CheckCircle
+                                else -> Icons.Default.Menu
                             }
                             Icon(imageVector = icon, contentDescription = category)
                         },
-                        label = { Text(category) }
+                        label = {
+                            // Ocultamos el texto si la pantalla es pequeña para que no se amontone
+                            Text(category, maxLines = 1, style = MaterialTheme.typography.labelSmall)
+                        }
                     )
                 }
             }
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToCreateTask,
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Agregar Tarea", tint = MaterialTheme.colorScheme.onPrimary)
+            // Opcional: Ocultamos el botón de agregar si estamos en el historial de completados
+            if (selectedCategory != "Completados") {
+                FloatingActionButton(
+                    onClick = onNavigateToCreateTask,
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Agregar Tarea", tint = MaterialTheme.colorScheme.onPrimary)
+                }
             }
         }
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            // 4. USAMOS LA LISTA FILTRADA EN VEZ DE LA LISTA COMPLETA
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+
             if (filteredTasks.isEmpty() && !state.isLoading) {
+                val emptyMessage = if (selectedCategory == "Completados") {
+                    "Aún no has completado ninguna tarea.\n¡A trabajar!"
+                } else {
+                    "No tienes tareas activas en $selectedCategory.\n¡Todo limpio!"
+                }
+
                 Text(
-                    text = "No tienes tareas en $selectedCategory.\n¡Todo limpio!",
+                    text = emptyMessage,
                     modifier = Modifier.align(Alignment.Center),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -148,7 +178,8 @@ fun HomeScreen(
         AdminLoginDialog(
             onDismiss = { showAdminDialog = false },
             onLoginSuccess = {
-                println("Acceso concedido al administrador")
+                showAdminDialog = false
+                onNavigateToAdmin()
             }
         )
     }
@@ -156,47 +187,56 @@ fun HomeScreen(
 
 @Composable
 fun TaskItem(
-    task: com.ll.taskflowv3.domain.model.Task,
+    task: Task,
     onCheckedChange: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
+    val isCompleted = task.status == TaskStatus.COMPLETED
+
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isCompleted) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surface,
+        animationSpec = tween(durationMillis = 300),
+        label = "colorFondo"
+    )
+
+    val textColor = if (isCompleted) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface
+    val textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None
+
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isCompleted) 0.dp else 2.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Checkbox(
-                    checked = task.status == com.ll.taskflowv3.domain.model.TaskStatus.COMPLETED,
-                    onCheckedChange = { onCheckedChange() }
+                    checked = isCompleted,
+                    onCheckedChange = { onCheckedChange() },
+                    colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary)
                 )
 
                 Text(
                     text = task.title,
                     modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    color = textColor,
+                    textDecoration = textDecoration
                 )
 
                 if (!task.isSynced) {
                     Text(
-                        text = "⏳ Pendiente",
+                        text = "☁️ Sin sincronizar",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error,
+                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
                         modifier = Modifier.padding(end = 8.dp)
                     )
                 }
 
                 IconButton(onClick = { onDeleteClick() }) {
                     Icon(
-                        imageVector = androidx.compose.material.icons.Icons.Default.Delete,
+                        imageVector = Icons.Default.Delete,
                         contentDescription = "Borrar Tarea",
-                        tint = MaterialTheme.colorScheme.error
+                        tint = if (isCompleted) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.error
                     )
                 }
             }
@@ -205,35 +245,41 @@ fun TaskItem(
                 Text(
                     text = task.description,
                     style = MaterialTheme.typography.bodyMedium,
+                    color = textColor,
+                    textDecoration = textDecoration,
                     modifier = Modifier.padding(start = 48.dp)
                 )
             }
 
             if (task.dueDate != null) {
                 Spacer(modifier = Modifier.height(8.dp))
+                val dateString = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(task.dueDate))
 
-                val dateString = java.text.SimpleDateFormat(
-                    "dd MMM yyyy",
-                    java.util.Locale.getDefault()
-                ).format(java.util.Date(task.dueDate))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(start = 48.dp)
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 48.dp)) {
                     Icon(
-                        imageVector = androidx.compose.material.icons.Icons.Default.DateRange,
+                        imageVector = Icons.Default.DateRange,
                         contentDescription = "Fecha límite",
                         modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = if (isCompleted) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = dateString,
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        color = if (isCompleted) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary,
+                        textDecoration = textDecoration
                     )
                 }
+            }
+
+            // Agregamos una pequeña etiqueta visual para saber de qué categoría era la tarea completada
+            if (isCompleted) {
+                Text(
+                    text = "Categoría original: ${task.category}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = textColor,
+                    modifier = Modifier.padding(start = 48.dp, top = 8.dp)
+                )
             }
         }
     }
